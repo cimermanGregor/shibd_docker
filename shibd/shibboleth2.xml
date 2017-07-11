@@ -1,0 +1,64 @@
+<SPConfig xmlns="urn:mace:shibboleth:2.0:native:sp:config"
+    xmlns:conf="urn:mace:shibboleth:2.0:native:sp:config"
+    xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+    xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+    xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+    clockSkew="180">
+
+    <!--
+    To customize behavior for specific resources on Apache, and to link vhosts or
+    resources to ApplicationOverride settings below, use web server options/commands.
+    See https://wiki.shibboleth.net/confluence/display/SHIB2/NativeSPConfigurationElements for help.
+    For examples with the RequestMap XML syntax instead, see the example-shibboleth2.xml
+    file, and the https://wiki.shibboleth.net/confluence/display/SHIB2/NativeSPRequestMapHowTo topic.
+    -->
+
+    <TCPListener address="0.0.0.0" port="12345" acl="0.0.0.0/0"/>
+
+    <ApplicationDefaults entityID="https://example.com/sp/docker/" REMOTE_USER="eppn persistent-id targeted-id">
+
+        <Sessions lifetime="28800" timeout="3600" relayState="cookie" checkAddress="false" handlerSSL="true" cookieProps="https">
+            <SSO discoveryProtocol="SAMLDS" discoveryURL="https://ds.test-fed.arnes.si/simplesaml/saml2/sp/idpdisco.php">
+              SAML2
+            </SSO>
+            <!--<SSO discoveryProtocol="SAMLDS" discoveryURL="https://ds.aai.arnes.si/simplesaml/saml2/sp/idpdisco.php">
+              SAML2
+            </SSO>-->
+            <Logout>SAML2 Local</Logout>
+            <Handler type="MetadataGenerator" Location="/Metadata" signing="false"/>
+            <!-- <Handler type="Status" Location="/Status" acl="127.0.0.1 ::1"/> -->
+            <Handler type="Status" Location="/Status"/>
+            <Handler type="Session" Location="/Session" showAttributeValues="false"/>
+            <Handler type="DiscoveryFeed" Location="/DiscoFeed"/>
+        </Sessions>
+
+        <Errors supportContact="hostmaster@example.com"
+            helpLocation="/about.html"
+            styleSheet="/shibboleth-sp/main.css"/>
+
+        <MetadataProvider type="XML" uri="https://ds.aai.arnes.si/metadata/test-fed.arnes.si.signed.xml" backingFilePath="federation-metadata-test-fed.xml" reloadInterval="7200">
+            <MetadataFilter type="RequireValidUntil" maxValidityInterval="2419200"/>
+            <MetadataFilter type="Signature" certificate="test-fed.arnes.si.crt"/>
+        </MetadataProvider>
+        <!--<MetadataProvider type="XML" uri="https://ds.aai.arnes.si/metadata/aai.arnes.si.sha256.xml" backingFilePath="federation-metadata.xml" reloadInterval="7200">
+            <MetadataFilter type="RequireValidUntil" maxValidityInterval="2419200"/>
+            <MetadataFilter type="Signature" certificate="arnesaai-metadata-signing.crt"/>
+        </MetadataProvider>-->
+        <!--
+        <MetadataProvider type="XML" validate="true" file="partner-metadata.xml"/>
+        -->
+
+        <AttributeExtractor type="XML" validate="true" reloadChanges="false" path="attribute-map.xml"/>
+        <AttributeResolver type="Query" subjectMatch="true"/>
+        <AttributeFilter type="XML" validate="true" path="attribute-policy.xml"/>
+        <CredentialResolver type="File" key="sp-key.pem" certificate="sp-cert.pem"/>
+
+        <!--
+        <ApplicationOverride id="admin" entityID="https://admin.example.org/shibboleth"/>
+        -->
+    </ApplicationDefaults>
+
+    <SecurityPolicyProvider type="XML" validate="true" path="security-policy.xml"/>
+    <ProtocolProvider type="XML" validate="true" reloadChanges="false" path="protocols.xml"/>
+
+</SPConfig>
